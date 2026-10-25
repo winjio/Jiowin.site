@@ -1,0 +1,15 @@
+.live-users-container { display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.6); padding: 4px 10px 4px 4px; border-radius: 20px; position: absolute; top: 10px; left: 10px; z-index: 100; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+.live-avatars { display: flex; }
+.live-avatars img { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #fff; margin-left: -8px; object-fit: cover; }
+.live-avatars img:first-child { margin-left: 0; }
+.live-count { font-size: 10px; font-weight: bold; color: #4caf50; display: flex; align-items: center; gap: 3px; }
+.live-count::before { content: ''; display: block; width: 6px; height: 6px; background: #4caf50; border-radius: 50%; animation: pulseGreen 1.5s infinite; }
+@keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
+.fake-chip { position: absolute; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: bold; color: #fff; border: 2px dashed #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.8); z-index: 50; pointer-events: none; animation: dropChip 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.fake-chip.c10 { background: #888; } .fake-chip.c50 { background: #e53935; } .fake-chip.c100 { background: #43a047; } .fake-chip.c500 { background: #fdd835; color: #000; }
+@keyframes dropChip { 0% { transform: translateY(-30px) scale(1.5); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+.live-feed-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); border: 1px solid #ffd700; padding: 6px 15px; border-radius: 20px; font-size: 11px; color: #fff; z-index: 999; display: flex; align-items: center; gap: 8px; animation: slideUp 0.3s ease, fadeOut 0.3s ease 2.5s forwards; pointer-events: none; }
+.live-feed-toast img { width: 20px; height: 20px; border-radius: 50%; }
+.live-feed-toast b { color: #ffd700; }
+@keyframes slideUp { from { bottom: 50px; opacity: 0; } to { bottom: 80px; opacity: 1; } }
+@keyframes fadeOut { to { opacity: 0; transform: translate(-50%, 10px); } }
