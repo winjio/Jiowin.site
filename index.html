@@ -4,16 +4,140 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Jiowin - Lobby</title>
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/auth.css">
-<link rel="stylesheet" href="css/wallet.css">
-<link rel="stylesheet" href="css/chat.css">
-<link rel="stylesheet" href="css/live-users.css">
+
+<!-- Socket.io -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<!-- 🔥 FIREBASE SETUP (Yahan apna Web Config dalo) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  
+  // ⚠️ YAHAN APNI FIREBASE WEB APP KI DETAILS DALO
+  // (Firebase Console -> Project Settings -> Web App se copy karo)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY_HERE", 
+    authDomain: "comparex-cebd8.firebaseapp.com",
+    projectId: "comparex-cebd8",
+    storageBucket: "comparex-cebd8.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID_HERE",
+    appId: "YOUR_APP_ID_HERE"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  window.db = getFirestore(app);
+  window.dbFuncs = { doc, getDoc, setDoc, updateDoc, onSnapshot };
+</script>
+
+<style>
+/* GLOBAL CSS */
+*{box-sizing:border-box;margin:0;padding:0;user-select:none;font-family:'Segoe UI',sans-serif}
+body{background:#0a0a0a;color:#fff;min-height:100vh;display:flex;justify-content:center;overflow-x:hidden}
+.app{width:100%;max-width:600px;min-height:100vh;background:#111;position:relative;display:flex;flex-direction:column}
+
+/* AUTH CSS */
+.auth-overlay{position:fixed;inset:0;background:radial-gradient(circle at top,#1a237e,#050510);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.auth-box{background:#111;border:1px solid #333;border-radius:16px;width:100%;max-width:350px;padding:25px}
+.auth-logo{font-weight:900;font-size:24px;color:#fff;text-align:center;margin-bottom:20px}
+.auth-logo span{background:#4caf50;color:#000;padding:2px 6px;border-radius:4px;font-size:16px}
+.auth-tabs{display:flex;background:#1e1e1e;border-radius:10px;margin-bottom:20px;padding:4px}
+.auth-tabs button{flex:1;background:transparent;border:none;color:#aaa;padding:10px;font-weight:bold;cursor:pointer;border-radius:8px}
+.auth-tabs button.active{background:#333;color:#fff}
+.auth-form{display:none;flex-direction:column;gap:12px}
+.auth-form.active{display:flex}
+.auth-input{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:12px;border-radius:8px;outline:none}
+.auth-input:focus{border-color:#4caf50}
+.auth-btn{background:#4caf50;color:#fff;border:none;padding:14px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}
+.auth-msg{font-size:12px;margin-top:10px;text-align:center;color:#e53935}
+
+/* TOP BAR */
+.top-bar{background:#1e1e1e;display:flex;justify-content:space-between;align-items:center;padding:10px 15px;border-bottom:1px solid #333;position:sticky;top:0;z-index:50}
+.brand{font-weight:900;font-size:18px;color:#fff;letter-spacing:1px;}
+.brand span{background:#4caf50;color:#000;padding:1px 4px;border-radius:4px;font-size:11px}
+.balance-pill{background:#4caf50;color:#000;padding:4px 10px;border-radius:10px;font-weight:bold;display:flex;gap:8px;font-size:14px;cursor:pointer}
+
+/* PAGES */
+.page{display:none;flex:1;flex-direction:column;padding-bottom:70px;overflow-y:auto}
+.page.active{display:flex}
+.banner{margin:10px;border-radius:12px;height:120px;background:linear-gradient(135deg,#1a237e,#0d47a1);display:flex;align-items:center;padding:15px;position:relative}
+.banner h2{font-size:20px;color:#ffd700;margin-bottom:5px}
+.claim-btn{padding:6px 12px;border:none;border-radius:6px;background:#ffd700;color:#000;font-weight:bold;margin-top:10px;cursor:pointer}
+.banner-img{position:absolute;right:10px;bottom:5px;font-size:60px;opacity:0.8}
+.category-title{font-size:16px;font-weight:bold;margin:15px;}
+
+/* GAMES GRID */
+.game-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 10px;margin-bottom:20px}
+.game-card{background:#1e1e1e;border-radius:12px;overflow:hidden;text-decoration:none;display:block;border:1px solid #333;position:relative;transition:transform 0.2s}
+.game-card:active{transform:scale(0.96)}
+.game-img{height:100px;display:flex;align-items:center;justify-content:center;font-size:50px}
+.game-info{padding:8px;text-align:center}
+.game-name{font-size:13px;font-weight:bold;color:#fff}
+.bg-7up{background:linear-gradient(135deg,#2e7d32,#1b5e20)}.bg-ab{background:linear-gradient(135deg,#b71c1c,#0d47a1)}.bg-dt{background:linear-gradient(135deg,#c62828,#2e7d32)}.bg-avi{background:linear-gradient(135deg,#000,#b71c1c)}.bg-sic{background:linear-gradient(135deg,#0d5c2c,#004d40)}.bg-rou{background:linear-gradient(135deg,#1b5e20,#0a192f)}.bg-ck{background:linear-gradient(135deg,#0d47a1,#b71c1c)}.bg-bac{background:linear-gradient(135deg,#1a237e,#4a148c)}.bg-fpc{background:linear-gradient(135deg,#b71c1c,#880e4f)}.bg-color{background:linear-gradient(135deg,#1a237e,#0d47a1)}
+.badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.6);color:#ffd700;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:10px;border:1px solid #ffd700;z-index:5}
+.badge-new{background:#e53935;color:#fff;border-color:#e53935}
+
+/* WALLET CSS */
+.page-header{font-size:20px;font-weight:bold;padding:15px;border-bottom:1px solid #333}
+.wallet-tabs{display:flex;background:#1e1e1e;margin:15px;border-radius:10px;padding:4px}
+.wallet-tabs button{flex:1;padding:8px;border:none;background:transparent;color:#aaa;font-weight:bold;cursor:pointer;border-radius:8px;font-size:12px}
+.wallet-tabs button.active{background:#333;color:#fff}
+.wallet-content{display:none;padding:0 15px}
+.wallet-content.active{display:block}
+.form-group{background:#1e1e1e;padding:20px;border-radius:12px;border:1px solid #333;margin-bottom:15px}
+.form-group label{display:block;font-size:13px;color:#aaa;margin-bottom:8px}
+.form-input{width:100%;background:#111;border:1px solid #444;color:#fff;padding:12px;border-radius:8px;font-size:16px;margin-bottom:15px;outline:none}
+.submit-btn{width:100%;background:#4caf50;color:#fff;border:none;padding:15px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer}
+.submit-btn.withdraw{background:#e53935}
+.payment-methods{display:flex;gap:10px;margin-bottom:15px}
+.method-btn{flex:1;padding:10px;text-align:center;background:#1e1e1e;border:1px solid #444;color:#aaa;border-radius:8px;cursor:pointer;font-weight:bold;transition:0.3s}
+.method-btn.active{background:#4caf50;color:#fff;border-color:#4caf50;box-shadow:0 0 10px rgba(76,175,80,0.4)}
+.refer-card{background:linear-gradient(135deg,#1a237e,#4a148c);padding:25px;border-radius:15px;text-align:center}
+.ref-code{background:rgba(0,0,0,0.3);padding:12px;border:1px dashed #ffd700;border-radius:8px;font-size:20px;font-weight:bold;color:#ffd700;margin:15px 0}
+.copy-btn{background:#ffd700;color:#000;border:none;padding:8px 20px;border-radius:20px;font-weight:bold;cursor:pointer}
+.history-item{background:#111;border:1px solid #333;border-radius:10px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between}
+.history-left .type{font-size:14px;font-weight:bold;text-transform:capitalize}
+.history-left .date{font-size:11px;color:#888;margin-top:4px}
+.history-right .amount{font-size:16px;font-weight:bold}
+.history-right .amount.deposit{color:#4caf50}.history-right .amount.withdraw{color:#e53935}
+.status-badge{font-size:10px;padding:2px 8px;border-radius:10px;margin-top:5px;display:inline-block}
+.status-pending{background:rgba(255,152,0,0.2);color:#ff9800}
+.status-approved{background:rgba(76,175,80,0.2);color:#4caf50}
+.status-rejected{background:rgba(229,57,53,0.2);color:#e53935}
+
+/* CHAT CSS */
+.chat-header{background:#1e293b;padding:15px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #333}
+.chat-avatar{width:40px;height:40px;background:#0088cc;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative}
+.online-dot{position:absolute;bottom:0;right:0;width:10px;height:10px;background:#4caf50;border-radius:50%;border:2px solid #1e293b}
+.chat-info h3{font-size:16px;color:#fff}.chat-info p{font-size:12px;color:#4caf50}
+.chat-messages{flex:1;padding:15px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.message{max-width:85%;padding:10px 15px;border-radius:15px;font-size:14px;line-height:1.4;position:relative}
+.message.bot{background:#1e293b;color:#fff;align-self:flex-start;border-bottom-left-radius:2px}
+.message.user{background:#0088cc;color:#fff;align-self:flex-end;border-bottom-right-radius:2px}
+.message .time{font-size:10px;color:rgba(255,255,255,0.6);margin-top:5px;text-align:right;display:block}
+.bot-card-btn{background:#4caf50;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:bold;cursor:pointer;width:100%;margin-top:5px}
+.typing-indicator{display:none;align-self:flex-start;background:#1e293b;padding:12px 18px;border-radius:15px;border-bottom-left-radius:2px}
+.typing-indicator.show{display:flex;gap:4px}
+.typing-indicator span{width:6px;height:6px;background:#888;border-radius:50%;animation:bounce 1.4s infinite ease-in-out both}
+.typing-indicator span:nth-child(1){animation-delay:-0.32s}.typing-indicator span:nth-child(2){animation-delay:-0.16s}
+@keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+.quick-replies{display:flex;gap:8px;padding:10px;overflow-x:auto;background:#1e293b;border-top:1px solid #333;scrollbar-width:none}
+.quick-replies::-webkit-scrollbar{display:none}
+.qr-btn{white-space:nowrap;background:#0f172a;border:1px solid #0088cc;color:#0088cc;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer}
+.chat-input-area{background:#1e293b;padding:10px;display:flex;gap:8px;align-items:center;border-top:1px solid #333}
+.attach-btn{background:transparent;border:none;color:#888;font-size:20px;cursor:pointer}
+.chat-input{flex:1;background:#0f172a;border:1px solid #333;color:#fff;padding:10px;border-radius:20px;outline:none}
+.send-btn{width:40px;height:40px;background:#0088cc;border:none;border-radius:50%;color:#fff;cursor:pointer}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;max-width:600px;margin:0 auto;background:#1e1e1e;display:flex;justify-content:space-around;padding:10px 0;border-top:1px solid #333;z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;color:#888;font-size:10px;cursor:pointer}
+.nav-item.active{color:#4caf50}
+.nav-item .icon{font-size:20px;margin-bottom:2px}
+</style>
 </head>
 <body>
 
-<!-- AUTH -->
+<!-- AUTH SCREEN -->
 <div class="auth-overlay" id="authScreen">
   <div class="auth-box">
     <div class="auth-logo">JIO<span>WIN</span></div>
@@ -29,47 +153,50 @@
     <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
       <input type="text" id="regName" class="auth-input" placeholder="Full Name" required>
       <input type="email" id="regEmail" class="auth-input" placeholder="Email" required>
-      <input type="password" id="regPass" class="auth-input" placeholder="Password (min 4)" required>
+      <input type="password" id="regPass" class="auth-input" placeholder="Password" required>
       <button type="submit" class="auth-btn">Create Account</button>
     </form>
     <div class="auth-msg" id="authMsg"></div>
   </div>
 </div>
 
-<!-- APP -->
+<!-- MAIN APP -->
 <div class="app" id="app" style="display: none;">
   <div class="top-bar" style="justify-content: flex-start; gap: 15px;">
     <div>☰ 🔔</div>
     <div class="brand">JIO<span>WIN</span></div>
     <div class="balance-pill" onclick="logout()" title="Logout" style="margin-left: auto;">
-      <span id="userBalanceDisplay">₹ 0</span> <span class="plus-icon">🚪</span>
+      <span id="userBalanceDisplay">₹ 0</span> 🚪
     </div>
   </div>
 
-  <!-- HOME -->
+  <!-- HOME PAGE -->
   <div id="page-home" class="page active">
     <div style="padding: 10px 15px; font-size: 14px; color: #aaa;">Welcome, <span id="userNameDisplay" style="color: #fff; font-weight: bold;">User</span>!</div>
     <div class="banner">
-      <div class="banner-text"><h2>Welcome Bonus</h2><p>Get 100% Deposit Bonus up to ₹10,000</p><button class="claim-btn" onclick="switchPage('wallet')">Claim Now</button></div>
+      <div class="banner-text">
+        <h2>Welcome Bonus</h2>
+        <p>Get 100% Deposit Bonus up to ₹10,000</p>
+        <button class="claim-btn" onclick="switchPage('wallet')">Claim Now</button>
+      </div>
       <div class="banner-img">🎁</div>
     </div>
     <div class="category-title">🔥 Popular Games</div>
-    
     <div class="game-grid">
-      <a href="7updown.html" class="game-card"><div class="badge">HOT</div><div class="game-img bg-7up">🎲</div><div class="game-info"><div class="game-name">7 Up Down</div></div></a>
-      <a href="andarbahar.html" class="game-card"><div class="game-img bg-ab">🃏</div><div class="game-info"><div class="game-name">Andar Bahar</div></div></a>
-      <a href="dragontiger.html" class="game-card"><div class="game-img bg-dt">🐉</div><div class="game-info"><div class="game-name">Dragon Tiger</div></div></a>
-      <a href="aviator.html" class="game-card"><div class="badge badge-new">NEW</div><div class="game-img bg-avi">✈️</div><div class="game-info"><div class="game-name">Aviator</div></div></a>
-      <a href="sicbo.html" class="game-card"><div class="game-img bg-sic">🎲</div><div class="game-info"><div class="game-name">Sic Bo</div></div></a>
-      <a href="roulette.html" class="game-card"><div class="game-img bg-rou">🎡</div><div class="game-info"><div class="game-name">Roulette</div></div></a>
-      <a href="cricket-roulette.html" class="game-card"><div class="badge">IPL</div><div class="game-img bg-ck">🏏</div><div class="game-info"><div class="game-name">Cricket Roulette</div></div></a>
-      <a href="baccarat.html" class="game-card"><div class="game-img bg-bac">👑</div><div class="game-info"><div class="game-name">Baccarat</div></div></a>
-      <a href="fish-prawn-crab.html" class="game-card"><div class="game-img bg-fpc">🦀</div><div class="game-info"><div class="game-name">Fish-Prawn-Crab</div></div></a>
-      <a href="color-prediction.html" class="game-card"><div class="game-img bg-color">🎨</div><div class="game-info"><div class="game-name">Color Prediction</div></div></a>
+      <a href="games/7updown.html" class="game-card"><div class="badge">HOT</div><div class="game-img bg-7up">🎲</div><div class="game-info"><div class="game-name">7 Up Down</div></div></a>
+      <a href="games/andarbahar.html" class="game-card"><div class="game-img bg-ab">🃏</div><div class="game-info"><div class="game-name">Andar Bahar</div></div></a>
+      <a href="games/dragontiger.html" class="game-card"><div class="game-img bg-dt">🐉</div><div class="game-info"><div class="game-name">Dragon Tiger</div></div></a>
+      <a href="games/aviator.html" class="game-card"><div class="badge badge-new">NEW</div><div class="game-img bg-avi">✈️</div><div class="game-info"><div class="game-name">Aviator</div></div></a>
+      <a href="games/sicbo.html" class="game-card"><div class="game-img bg-sic">🎲</div><div class="game-info"><div class="game-name">Sic Bo</div></div></a>
+      <a href="games/roulette.html" class="game-card"><div class="game-img bg-rou">🎡</div><div class="game-info"><div class="game-name">Roulette</div></div></a>
+      <a href="games/cricket-roulette.html" class="game-card"><div class="badge">IPL</div><div class="game-img bg-ck">🏏</div><div class="game-info"><div class="game-name">Cricket Roulette</div></div></a>
+      <a href="games/baccarat.html" class="game-card"><div class="game-img bg-bac">👑</div><div class="game-info"><div class="game-name">Baccarat</div></div></a>
+      <a href="games/fish-prawn-crab.html" class="game-card"><div class="game-img bg-fpc">🦀</div><div class="game-info"><div class="game-name">Fish-Prawn-Crab</div></div></a>
+      <a href="games/color-prediction.html" class="game-card"><div class="game-img bg-color">🎨</div><div class="game-info"><div class="game-name">Color Prediction</div></div></a>
     </div>
   </div>
 
-  <!-- WALLET -->
+  <!-- WALLET PAGE -->
   <div id="page-wallet" class="page">
     <div class="page-header">My Wallet</div>
     <div class="wallet-tabs">
@@ -78,11 +205,17 @@
       <button onclick="switchWalletTab('history')" id="tab-history">History</button>
       <button onclick="switchWalletTab('refer')" id="tab-refer">Refer</button>
     </div>
-
+    
+    <!-- Deposit Tab -->
     <div id="content-deposit" class="wallet-content active">
-      <div class="form-group"><label>Enter Amount (Min ₹100)</label><input type="number" id="depositAmount" class="form-input" placeholder="e.g. 500"><button id="depBtn" class="submit-btn" onclick="processDeposit()">Proceed to Pay</button></div>
+      <div class="form-group">
+        <label>Enter Amount (Min ₹100)</label>
+        <input type="number" id="depositAmount" class="form-input" placeholder="e.g. 500">
+        <button id="depBtn" class="submit-btn" onclick="processDeposit()">Proceed to Pay</button>
+      </div>
     </div>
 
+    <!-- Withdraw Tab -->
     <div id="content-withdraw" class="wallet-content">
       <div class="form-group">
         <label>Enter Amount (Min ₹500)</label>
@@ -91,24 +224,46 @@
           <div class="method-btn active" onclick="switchWithdrawMethod('upi')" id="btn-method-upi">UPI</div>
           <div class="method-btn" onclick="switchWithdrawMethod('bank')" id="btn-method-bank">Bank Transfer</div>
         </div>
-        <div id="upi-fields"><label>UPI ID</label><input type="text" id="upiId" class="form-input" placeholder="yourname@upi"></div>
+        <div id="upi-fields">
+          <label>UPI ID</label>
+          <input type="text" id="upiId" class="form-input" placeholder="yourname@upi">
+        </div>
         <div id="bank-fields" style="display: none;">
-          <label>Account Holder Name</label><input type="text" id="accName" class="form-input" placeholder="Full Name">
-          <label>Account Number</label><input type="text" id="accNumber" class="form-input" placeholder="Account Number">
-          <label>IFSC Code</label><input type="text" id="ifscCode" class="form-input" placeholder="e.g. SBIN0001234">
+          <label>Account Holder Name</label>
+          <input type="text" id="accName" class="form-input" placeholder="Full Name">
+          <label>Account Number</label>
+          <input type="text" id="accNumber" class="form-input" placeholder="Account Number">
+          <label>IFSC Code</label>
+          <input type="text" id="ifscCode" class="form-input" placeholder="e.g. SBIN0001234">
         </div>
         <button class="submit-btn withdraw" onclick="processWithdraw()">Request Withdrawal</button>
-        <div class="msg" id="wdMsg" style="text-align:center"></div>
       </div>
     </div>
 
-    <div id="content-history" class="wallet-content"><div class="form-group"><label>Transaction History</label><div id="historyList"><p style="color:#888;text-align:center;">No transactions yet.</p></div></div></div>
-    <div id="content-refer" class="wallet-content"><div class="refer-card"><h3>Refer & Earn ₹100</h3><div class="ref-code" id="refCodeDisplay">LOADING...</div><button class="copy-btn" onclick="copyRefCode()">Copy Code</button></div></div>
+    <!-- History Tab -->
+    <div id="content-history" class="wallet-content">
+      <div class="form-group">
+        <label>Transaction History</label>
+        <div id="historyList"><p style="color:#888;text-align:center;">No transactions yet.</p></div>
+      </div>
+    </div>
+
+    <!-- Refer Tab -->
+    <div id="content-refer" class="wallet-content">
+      <div class="refer-card">
+        <h3>Refer & Earn ₹100</h3>
+        <div class="ref-code" id="refCodeDisplay">LOADING...</div>
+        <button class="copy-btn" onclick="copyRefCode()">Copy Code</button>
+      </div>
+    </div>
   </div>
 
-  <!-- CHAT -->
+  <!-- LIVE CHAT PAGE -->
   <div id="page-chat" class="page">
-    <div class="chat-header"><div class="chat-avatar">🤖<div class="online-dot"></div></div><div class="chat-info"><h3>Jiowin Support</h3><p>Live Telegram Bot</p></div></div>
+    <div class="chat-header">
+      <div class="chat-avatar">🤖<div class="online-dot"></div></div>
+      <div class="chat-info"><h3>Jiowin Support</h3><p>Live Telegram Bot</p></div>
+    </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="quick-replies">
       <button class="qr-btn" onclick="quickReply('Check Balance')">💰 Balance</button>
@@ -116,10 +271,15 @@
       <button class="qr-btn" onclick="quickReply('Withdrawal nahi aaya')">📤 Withdraw Issue</button>
       <button class="qr-btn" onclick="quickReply('Talk to Agent')">👨‍💼 Live Agent</button>
     </div>
-    <div class="chat-input-area"><button class="attach-btn" onclick="attachFile()">📎</button><input type="text" id="chatInput" class="chat-input" placeholder="Type a message..."><button class="send-btn" onclick="sendMessage()">➤</button></div>
+    <div class="chat-input-area">
+      <button class="attach-btn" onclick="attachFile()">📎</button>
+      <input type="text" id="chatInput" class="chat-input" placeholder="Type a message...">
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
   </div>
 </div>
 
+<!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <div class="nav-item active" id="nav-home" onclick="switchPage('home')"><span class="icon">🏠</span><span>Home</span></div>
   <div class="nav-item" id="nav-wallet" onclick="switchPage('wallet')"><span class="icon">💰</span><span>Wallet</span></div>
@@ -127,10 +287,10 @@
   <div class="nav-item" id="nav-profile" onclick="logout()"><span class="icon">👤</span><span>Logout</span></div>
 </div>
 
+<!-- CONNECT JS FILES -->
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/wallet.js"></script>
 <script src="js/chat.js"></script>
-<script src="js/live-users.js"></script>
 </body>
 </html>
