@@ -1,1 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jiowin - Lobby</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/wallet.css">
+<link rel="stylesheet" href="css/chat.css">
+<link rel="stylesheet" href="css/live-users.css">
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
 
+<!-- AUTH -->
+<div class="auth-overlay" id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">JIO<span>WIN</span></div>
+    <div class="auth-tabs">
+      <button onclick="switchAuthTab('login')" class="active" id="btn-login">Login</button>
+      <button onclick="switchAuthTab('register')" id="btn-reg">Register</button>
+    </div>
+    <form class="auth-form active" id="loginForm" onsubmit="handleLogin(event)">
+      <input type="email" id="loginEmail" class="auth-input" placeholder="Email" required>
+      <input type="password" id="loginPass" class="auth-input" placeholder="Password" required>
+      <button type="submit" class="auth-btn">Login</button>
+    </form>
+    <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
+      <input type="text" id="regName" class="auth-input" placeholder="Full Name" required>
+      <input type="email" id="regEmail" class="auth-input" placeholder="Email" required>
+      <input type="password" id="regPass" class="auth-input" placeholder="Password (min 4)" required>
+      <button type="submit" class="auth-btn">Create Account</button>
+    </form>
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app" style="display: none;">
+  <div class="top-bar" style="justify-content: flex-start; gap: 15px;">
+    <div>☰ 🔔</div>
+    <div class="brand">JIO<span>WIN</span></div>
+    <div class="balance-pill" onclick="logout()" title="Logout" style="margin-left: auto;">
+      <span id="userBalanceDisplay">₹ 0</span> <span class="plus-icon">🚪</span>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="page-home" class="page active">
+    <div style="padding: 10px 15px; font-size: 14px; color: #aaa;">Welcome, <span id="userNameDisplay" style="color: #fff; font-weight: bold;">User</span>!</div>
+    <div class="banner">
+      <div class="banner-text"><h2>Welcome Bonus</h2><p>Get 100% Deposit Bonus up to ₹10,000</p><button class="claim-btn" onclick="switchPage('wallet')">Claim Now</button></div>
+      <div class="banner-img">🎁</div>
+    </div>
+    <div class="category-title">🔥 Popular Games</div>
+    
+    <div class="game-grid">
+      <a href="7updown.html" class="game-card"><div class="badge">HOT</div><div class="game-img bg-7up">🎲</div><div class="game-info"><div class="game-name">7 Up Down</div></div></a>
+      <a href="andarbahar.html" class="game-card"><div class="game-img bg-ab">🃏</div><div class="game-info"><div class="game-name">Andar Bahar</div></div></a>
+      <a href="dragontiger.html" class="game-card"><div class="game-img bg-dt">🐉</div><div class="game-info"><div class="game-name">Dragon Tiger</div></div></a>
+      <a href="aviator.html" class="game-card"><div class="badge badge-new">NEW</div><div class="game-img bg-avi">✈️</div><div class="game-info"><div class="game-name">Aviator</div></div></a>
+      <a href="sicbo.html" class="game-card"><div class="game-img bg-sic">🎲</div><div class="game-info"><div class="game-name">Sic Bo</div></div></a>
+      <a href="roulette.html" class="game-card"><div class="game-img bg-rou">🎡</div><div class="game-info"><div class="game-name">Roulette</div></div></a>
+      <a href="cricket-roulette.html" class="game-card"><div class="badge">IPL</div><div class="game-img bg-ck">🏏</div><div class="game-info"><div class="game-name">Cricket Roulette</div></div></a>
+      <a href="baccarat.html" class="game-card"><div class="game-img bg-bac">👑</div><div class="game-info"><div class="game-name">Baccarat</div></div></a>
+      <a href="fish-prawn-crab.html" class="game-card"><div class="game-img bg-fpc">🦀</div><div class="game-info"><div class="game-name">Fish-Prawn-Crab</div></div></a>
+      <a href="color-prediction.html" class="game-card"><div class="game-img bg-color">🎨</div><div class="game-info"><div class="game-name">Color Prediction</div></div></a>
+    </div>
+  </div>
+
+  <!-- WALLET -->
+  <div id="page-wallet" class="page">
+    <div class="page-header">My Wallet</div>
+    <div class="wallet-tabs">
+      <button onclick="switchWalletTab('deposit')" class="active" id="tab-deposit">Deposit</button>
+      <button onclick="switchWalletTab('withdraw')" id="tab-withdraw">Withdraw</button>
+      <button onclick="switchWalletTab('history')" id="tab-history">History</button>
+      <button onclick="switchWalletTab('refer')" id="tab-refer">Refer</button>
+    </div>
+
+    <div id="content-deposit" class="wallet-content active">
+      <div class="form-group"><label>Enter Amount (Min ₹100)</label><input type="number" id="depositAmount" class="form-input" placeholder="e.g. 500"><button id="depBtn" class="submit-btn" onclick="processDeposit()">Proceed to Pay</button></div>
+    </div>
+
+    <div id="content-withdraw" class="wallet-content">
+      <div class="form-group">
+        <label>Enter Amount (Min ₹500)</label>
+        <input type="number" id="withdrawAmount" class="form-input" placeholder="e.g. 1000">
+        <div class="payment-methods">
+          <div class="method-btn active" onclick="switchWithdrawMethod('upi')" id="btn-method-upi">UPI</div>
+          <div class="method-btn" onclick="switchWithdrawMethod('bank')" id="btn-method-bank">Bank Transfer</div>
+        </div>
+        <div id="upi-fields"><label>UPI ID</label><input type="text" id="upiId" class="form-input" placeholder="yourname@upi"></div>
+        <div id="bank-fields" style="display: none;">
+          <label>Account Holder Name</label><input type="text" id="accName" class="form-input" placeholder="Full Name">
+          <label>Account Number</label><input type="text" id="accNumber" class="form-input" placeholder="Account Number">
+          <label>IFSC Code</label><input type="text" id="ifscCode" class="form-input" placeholder="e.g. SBIN0001234">
+        </div>
+        <button class="submit-btn withdraw" onclick="processWithdraw()">Request Withdrawal</button>
+        <div class="msg" id="wdMsg" style="text-align:center"></div>
+      </div>
+    </div>
+
+    <div id="content-history" class="wallet-content"><div class="form-group"><label>Transaction History</label><div id="historyList"><p style="color:#888;text-align:center;">No transactions yet.</p></div></div></div>
+    <div id="content-refer" class="wallet-content"><div class="refer-card"><h3>Refer & Earn ₹100</h3><div class="ref-code" id="refCodeDisplay">LOADING...</div><button class="copy-btn" onclick="copyRefCode()">Copy Code</button></div></div>
+  </div>
+
+  <!-- CHAT -->
+  <div id="page-chat" class="page">
+    <div class="chat-header"><div class="chat-avatar">🤖<div class="online-dot"></div></div><div class="chat-info"><h3>Jiowin Support</h3><p>Live Telegram Bot</p></div></div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="quick-replies">
+      <button class="qr-btn" onclick="quickReply('Check Balance')">💰 Balance</button>
+      <button class="qr-btn" onclick="quickReply('Money add nahi hua')">📥 Deposit Issue</button>
+      <button class="qr-btn" onclick="quickReply('Withdrawal nahi aaya')">📤 Withdraw Issue</button>
+      <button class="qr-btn" onclick="quickReply('Talk to Agent')">👨‍💼 Live Agent</button>
+    </div>
+    <div class="chat-input-area"><button class="attach-btn" onclick="attachFile()">📎</button><input type="text" id="chatInput" class="chat-input" placeholder="Type a message..."><button class="send-btn" onclick="sendMessage()">➤</button></div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-home" onclick="switchPage('home')"><span class="icon">🏠</span><span>Home</span></div>
+  <div class="nav-item" id="nav-wallet" onclick="switchPage('wallet')"><span class="icon">💰</span><span>Wallet</span></div>
+  <div class="nav-item" id="nav-chat" onclick="switchPage('chat')"><span class="icon">💬</span><span>Chat</span></div>
+  <div class="nav-item" id="nav-profile" onclick="logout()"><span class="icon">👤</span><span>Logout</span></div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/wallet.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/live-users.js"></script>
+</body>
+</html>
